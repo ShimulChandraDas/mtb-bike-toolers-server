@@ -26,13 +26,44 @@ async function run() {
         await client.connect();
         console.log("database connected");
         const toolsCollection = client.db("bike_toolers").collection("tools");
+        const orderCollection = client.db("bike_toolers").collection("orders");
 
+
+        //tools Load UI
         app.get('/tools', async (req, res) => {
             const query = {};
             const cursor = toolsCollection.find(query);
             const tools = await cursor.toArray();
             res.send(tools);
         })
+
+        //decrees quantity
+        // app.get('/available', async (req, res) => {
+        //     const quantity = req.query.quantity;
+        //     const tools = await toolsCollection.find().toArray();
+
+        //     const query = { stock: stock }
+        //     const orders = await orderCollection.find(query).toArray();
+        //     res.send(orders)
+
+        // })
+
+
+
+        //handle order
+        app.post('/order', async (req, res) => {
+            const order = req.body;
+            const query = { purchased: order.purchased, purchasedId: order.purchasedId, customerName: order.customerName }
+            const exists = await orderCollection.findOne(query);
+            if (exists) {
+                return res.send({ success: false, order: exists })
+            }
+            const result = orderCollection.insertOne(order);
+            return res.send({ success: true, result });
+
+        })
+
+
 
     } finally {
 
