@@ -38,25 +38,30 @@ async function run() {
         })
 
         //decrees quantity
-        app.get('/available', async (req, res) => {
-            const stock = req.query.stock;
-            const tools = await toolsCollection.find().toArray();
+        // app.get('/available', async (req, res) => {
+        //     const stock = req.query.stock;
+        //     const tools = await toolsCollection.find().toArray();
 
 
-            const query = { stock: stock }
+        //     const query = { stock: stock }
+        //     const orders = await orderCollection.find(query).toArray();
+        //     tools.forEach(tool => {
+        //         const toolOrders = tools.filter(t => t.purchased === tool.name);
+        //         const available = orders.stock - orders.orderQuantity
+        //         console.log(available);
+        //         //tool.ordered = toolOrders.map(q => q.stock);
+
+        //     })
+
+        //     res.send(tools)
+
+        // })
+        app.get('/order', async (req, res) => {
+            const customer = req.query.customer;
+            const query = { customer: customer };
             const orders = await orderCollection.find(query).toArray();
-            tools.forEach(tool => {
-                const toolOrders = tools.filter(t => t.purchased === tool.name);
-                const available = orders.stock - orders.orderQuantity
-                console.log(available);
-                //tool.ordered = toolOrders.map(q => q.stock);
-
-            })
-
-            res.send(tools)
-
+            res.send(orders);
         })
-
 
 
         //handle order
