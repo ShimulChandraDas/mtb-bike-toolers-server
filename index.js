@@ -1,5 +1,6 @@
 const express = require('express')
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const app = express()
 require('dotenv').config()
 const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -21,12 +22,28 @@ var uri = `mongodb://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0-
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!verifyJWT) {
+        return res.status(401).send({ message: 'UnAuthorized Access' })
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'Access Forbidden' })
+        }
+        req.decoded = decoded;
+        next();
+    });
+}
+
 async function run() {
     try {
         await client.connect();
         console.log("database connected");
         const toolsCollection = client.db("bike_toolers").collection("tools");
         const orderCollection = client.db("bike_toolers").collection("orders");
+        const userCollection = client.db("bike_toolers").collection("users");
 
 
         //tools Load UI
@@ -35,6 +52,53 @@ async function run() {
             const cursor = toolsCollection.find(query);
             const tools = await cursor.toArray();
             res.send(tools);
+        })
+        //all users Load
+        app.get('/user/', verifyJWT, async (req, res) => {
+            const users = await userCollection.find().toArray();
+            res.send(users)
+        });
+
+        //secure admin route
+        app.put('admin/email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email })
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin })
+        })
+
+        //Make Admin
+        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'admin') {
+                const filter = { email: email };
+                const updateDoc = {
+                    $set: { role: 'admin' },
+                };
+                const result = await userCollection.updateOne(filter, updateDoc);
+                res.send(result);
+            } else {
+                res.status(403).send({ message: 'Access Forbidden' });
+            }
+        })
+
+
+
+
+        //user data loaded
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const option = { upsert: true };
+            const updateDoc = {
+                $set: user,
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, option);
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+            res.send({ result, token });
         })
 
         //decrees quantity
@@ -56,11 +120,18 @@ async function run() {
         //     res.send(tools)
 
         // })
-        app.get('/order', async (req, res) => {
+        app.get('/order', verifyJWT, async (req, res) => {
             const customer = req.query.customer;
-            const query = { customer: customer };
-            const orders = await orderCollection.find(query).toArray();
-            res.send(orders);
+            //const authorization = req.header.authorization;
+            const decodedEmail = req.decoded.email;
+            if (customer === decodedEmail) {
+                const query = { customer: customer };
+                const orders = await orderCollection.find(query).toArray();
+                res.send(orders);
+            } else {
+                return res.status(403).send({ message: 'Access Forbidden' });
+            }
+
         })
 
 
