@@ -21,9 +21,10 @@ var uri = `mongodb://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0-
 //console.log(uri);
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-
+//token verify 
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
+
     if (!verifyJWT) {
         return res.status(401).send({ message: 'UnAuthorized Access' })
     }
@@ -159,6 +160,9 @@ run().catch(console.dir);
 
 app.get('/', (req, res) => {
     res.send('Hello from MTB Bike Toolers!')
+})
+app.get('/test', (req, res) => {
+    res.send('Hello from Heroku test!')
 })
 
 app.listen(port, () => {
