@@ -3,7 +3,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const app = express()
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 const port = process.env.PORT || 5000
@@ -61,9 +61,10 @@ async function run() {
         });
 
         //secure admin route
-        app.put('admin/email', async (req, res) => {
+        app.get('/admin/:email', async (req, res) => {
             const email = req.params.email;
             const user = await userCollection.findOne({ email: email })
+
             const isAdmin = user.role === 'admin';
             res.send({ admin: isAdmin })
         })
@@ -123,7 +124,6 @@ async function run() {
         // })
         app.get('/order', verifyJWT, async (req, res) => {
             const customer = req.query.customer;
-            //const authorization = req.header.authorization;
             const decodedEmail = req.decoded.email;
             if (customer === decodedEmail) {
                 const query = { customer: customer };
@@ -132,7 +132,13 @@ async function run() {
             } else {
                 return res.status(403).send({ message: 'Access Forbidden' });
             }
+        });
 
+        app.get('/order/:id', async (res, req) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const order = await orderCollection.findOne(query);
+            res.send(order);
         })
 
 
