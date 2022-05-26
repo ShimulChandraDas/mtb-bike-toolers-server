@@ -46,6 +46,7 @@ async function run() {
         const orderCollection = client.db("bike_toolers").collection("orders");
         const userCollection = client.db("bike_toolers").collection("users");
         const paymentCollection = client.db("bike_toolers").collection("payments");
+        const reviewCollection = client.db("bike_toolers").collection("reviews");
 
         //payment
         app.post('/create-payment-intent', verifyJWT, async (req, res) => {
@@ -70,6 +71,13 @@ async function run() {
             const tools = await cursor.toArray();
             res.send(tools);
         })
+
+        //review load
+        app.get('/review', async (req, res) => {
+            const reviews = await reviewCollection.find().toArray();
+            res.send(reviews);
+        })
+
         //all users Load
         app.get('/user/', verifyJWT, async (req, res) => {
             const users = await userCollection.find().toArray();
@@ -121,25 +129,7 @@ async function run() {
             res.send({ result, token });
         })
 
-        //decrees quantity
-        // app.get('/available', async (req, res) => {
-        //     const stock = req.query.stock;
-        //     const tools = await toolsCollection.find().toArray();
 
-
-        //     const query = { stock: stock }
-        //     const orders = await orderCollection.find(query).toArray();
-        //     tools.forEach(tool => {
-        //         const toolOrders = tools.filter(t => t.purchased === tool.name);
-        //         const available = orders.stock - orders.orderQuantity
-        //         console.log(available);
-        //         //tool.ordered = toolOrders.map(q => q.stock);
-
-        //     })
-
-        //     res.send(tools)
-
-        // })
         app.get('/order', verifyJWT, async (req, res) => {
             const customer = req.query.customer;
             const decodedEmail = req.decoded.email;
@@ -175,7 +165,12 @@ async function run() {
             const updatedOrdered = await orderCollection.updateOne(filter, updatedDoc);
             res.send(updatedDoc);
         })
-
+        //Tools Post
+        app.post('/tools', async (req, res) => {
+            const newTools = req.body;
+            const result = await toolsCollection.insertOne(newTools);
+            res.send(result);
+        })
 
         //handle order
         app.post('/order', async (req, res) => {
