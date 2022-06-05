@@ -129,7 +129,7 @@ async function run() {
             res.send({ result, token });
         })
 
-
+        //added
         app.get('/order', verifyJWT, async (req, res) => {
             const customer = req.query.customer;
             const decodedEmail = req.decoded.email;
@@ -141,7 +141,7 @@ async function run() {
                 return res.status(403).send({ message: 'Access Forbidden' });
             }
         });
-
+        //get api
         app.get('/order/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             console.log(id);
@@ -149,7 +149,7 @@ async function run() {
             const order = await orderCollection.findOne(query);
             res.send(order);
         })
-
+        //patch api
         app.patch('/order/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const payment = req.body;
